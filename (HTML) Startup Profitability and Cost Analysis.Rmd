@@ -1,0 +1,155 @@
+---
+title: "Startup Profitability and Cost Analysis"
+author: ''
+output:
+  word_document:
+    toc: true
+    toc_depth: '2'
+  pdf_document:
+    toc: true
+    toc_depth: '2'
+  html_document:
+    df_print: paged
+    toc: true
+    toc_depth: 2
+    theme: united
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 12, fig.height = 6)
+```
+
+### 📥 Load Packages & Data
+
+```{r}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(tidyr)
+library(janitor)
+
+setwd("C:/Users/LENOVO/Downloads")
+data <- read_csv("food_delivery_startup_2024_fictional_data.csv") %>%
+  janitor::clean_names()
+
+month_levels <- c("Jan 2024", "Feb 2024", "Mar 2024", "Apr 2024",
+                  "May 2024", "Jun 2024", "Jul 2024", "Aug 2024",
+                  "Sep 2024", "Oct 2024", "Nov 2024", "Dec 2024")
+data$month <- factor(data$month, levels = month_levels, ordered = TRUE)
+```
+
+### 🔧 Calculations
+
+```{r}
+data <- data %>%
+  mutate(
+    total_revenue_calculated = subscription_revenue_pkr + commission_revenue_pkr +
+      delivery_fees_collected_pkr + in_app_ads_revenue_pkr,
+    total_costs_calculated = fixed_costs_pkr + delivery_partner_payouts_pkr +
+      marketing_spend_pkr + packaging_costs_pkr + customer_support_refunds_pkr,
+    profit_calculated = total_revenue_calculated - total_costs_calculated,
+    profit_margin = round(profit_calculated / total_revenue_calculated, 3),
+    cumulative_profit = cumsum(profit_calculated),
+    revenue_growth_pct = round((total_revenue_calculated / lag(total_revenue_calculated) - 1) * 100, 2)
+  )
+```
+
+### 📊 Summary Statistics
+
+```{r}
+total_profit <- sum(data$profit_calculated)
+max_row <- data[which.max(data$profit_calculated), ]
+break_even <- data %>% filter(profit_calculated > 0) %>% slice(1)
+avg_margin <- mean(data$profit_margin, na.rm = TRUE)
+sd_profit <- sd(data$profit_calculated)
+
+data.frame(
+  `Total Annual Profit (PKR)` = total_profit,
+  `Highest Profit Month` = max_row$month,
+  `Highest Profit (PKR)` = max_row$profit_calculated,
+  `Avg. Monthly Profit Margin (%)` = round(avg_margin * 100, 2),
+  `Break-even Month` = break_even$month,
+  `Profit SD (PKR)` = round(sd_profit, 2)
+)
+```
+
+### 📈 Monthly Revenue Growth (%)
+
+```{r}
+library(knitr)
+kable(data %>% select(month, revenue_growth_pct), caption = "Revenue Growth % by Month")
+```
+
+### 💰 Cumulative Profit
+
+```{r}
+kable(data %>% select(month, cumulative_profit), caption = "Cumulative Profit by Month")
+```
+
+### 📊 Visualizations
+
+#### (a) Revenue Growth %
+
+```{r}
+ggplot(data, aes(x = month, y = revenue_growth_pct, group = 1)) +
+  geom_line(color = "darkorange", linewidth = 1.2) +
+  geom_point(color = "black", size = 3) +
+  labs(title = "Monthly Revenue Growth (%)", x = "Month", y = "Growth (%)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### (b) Monthly Cost Breakdown
+
+```{r}
+cost_data <- data %>%
+  select(month, fixed_costs_pkr, delivery_partner_payouts_pkr,
+         marketing_spend_pkr, packaging_costs_pkr,
+         customer_support_refunds_pkr) %>%
+  pivot_longer(-month, names_to = "cost_type", values_to = "amount")
+
+cost_data$month <- factor(cost_data$month, levels = month_levels, ordered = TRUE)
+
+ggplot(cost_data, aes(x = month, y = amount, fill = cost_type)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Monthly Cost Breakdown", x = "Month", y = "Cost (PKR)") +
+  scale_y_continuous(labels = comma) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### (c) Revenue, Costs, Profit Trend
+
+```{r}
+line_data <- data %>%
+  select(month, total_revenue_calculated, total_costs_calculated, profit_calculated) %>%
+  rename(Revenue = total_revenue_calculated,
+         Costs = total_costs_calculated,
+         Profit = profit_calculated) %>%
+  pivot_longer(-month, names_to = "metric", values_to = "value")
+
+ggplot(line_data, aes(x = month, y = value, color = metric, group = metric)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 3) +
+  labs(title = "Revenue, Costs & Profit Over Time", x = "Month", y = "Amount (PKR)") +
+  scale_y_continuous(labels = comma) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### (d) Profit Trend + Break-even Annotation
+
+```{r}
+ggplot(data, aes(x = month, y = profit_calculated, group = 1)) +
+  geom_line(color = "blue", linewidth = 1.2) +
+  geom_point(color = "darkgreen", size = 3) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  geom_text(data = break_even, aes(label = "Break-even", y = profit_calculated + 100000),
+            color = "purple", size = 4, vjust = -1) +
+  labs(title = "Monthly Profit Trend", x = "Month", y = "Profit (PKR)") +
+  scale_y_continuous(labels = comma) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
