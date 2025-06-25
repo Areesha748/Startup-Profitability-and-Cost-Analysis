@@ -31,13 +31,14 @@ The dataset was manually simulated to reflect monthly operations of a food deliv
 - Profit dropped by **146.53%** during months with highest delivery partner payouts
 
 ## Project Files
-startup-profitability-analysis/
-├── food_delivery_startup_2024_fictional_data.csv # Simulated financial dataset
-├── startup_profitability_analysis.Rmd # R Markdown file with full analysis
-├── startup_profitability_analysis.pdf # Auto-generated PDF report from Rmd
-├── startup_project_report.pdf # Final report with narrative explanation
-├── app.R # Shiny dashboard for interactive scenario analysis
-└── README.md # This project summary
+
+| File                                  | Description                                          |
+|---------------------------------------|------------------------------------------------------|
+| `food_delivery_startup_2024_fictional_data.csv` | Simulated monthly dataset used for the analysis     |
+| `startup_profitability_analysis.Rmd`  | Full R Markdown analysis with code and output       |
+| `startup_profitability_analysis.pdf`  | Exported PDF version of the R Markdown              |
+| `startup_project_report.pdf`          | Written business-style report with methodology and insights |
+| `app.R`                               | Shiny dashboard code for interactive sensitivity testing |
 
 ## Technologies Used
 
